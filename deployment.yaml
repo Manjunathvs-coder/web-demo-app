@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: my-httpd-app
-          image: <aws_account_id>.dkr.ecr.<region>.amazonaws.com/my-httpd-app:latest
+          image: 420518854293.dkr.ecr.ap-south-1.amazonaws.com/my-httpd-app:latest
           ports:
             - containerPort: 80
