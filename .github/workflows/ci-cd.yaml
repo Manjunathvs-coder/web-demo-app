@@ -1,0 +1,47 @@
+name: CI-CD
+
+on:
+    push:
+        branches: ["master"]
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+
+        permissions:
+            contents: read
+            id-token: write
+
+        steps:
+         - name: code checkout
+           uses: actions/checkout@v4
+
+         - name: Configure AWS credentials
+           uses: aws-actions/configure-aws-credentials@v4
+           with:
+            role-to-assume: arn:aws:iam::420518854293:role/GitHubActions-ECR-EKS-Role
+            aws-region: ap-south-1
+
+         - name: login to ECR
+           id: login-ecr
+           uses: aws-actions/amazon-ecr-login@v2
+
+         - name: Build, Tag and push to ECR Repo
+           env:
+            ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+            ECR_REPOSITORY: sample-app
+            IMAGE_TAG: latest
+           run: |
+            docker build $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+            docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG 
+
+         - name: Update kubeconfig
+           run: kubectl update-kubeconfig --region ap-south-1 --name my-demo-kube
+
+         - name: deploy into K8s
+           run: |
+            kubectl apply -f deployment.yaml
+            kubectl apply -f service.yaml
+            kubectl rollout status deployment/my-httpd-app
+           
+  
